@@ -3,6 +3,7 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"path/filepath"
 	"sync"
 	"time"
@@ -26,7 +27,7 @@ func NewManager(path string) (*Manager, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	log.Printf("加载配置文件: %s", path)
 	// 初始化文件监听器
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
