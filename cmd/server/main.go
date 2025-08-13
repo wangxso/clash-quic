@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"clash_quic/config"
 	"context"
 	"crypto/tls"
+	"flag"
 	"io"
 	"log"
 	"net"
@@ -50,14 +52,14 @@ func handleStream(s quic.Stream) {
 	go func() {
 		_, err := io.Copy(conn, r)
 		if err != nil {
-			// log.Printf("copy to target err: %v", err)
+			log.Printf("copy to target err: %v", err)
 		}
 		conn.Close()
 	}()
 
 	_, err = io.Copy(s, conn)
 	if err != nil {
-		// log.Printf("copy to stream err: %v", err)
+		log.Printf("copy to stream err: %v", err)
 	}
 }
 
@@ -65,10 +67,22 @@ func main() {
 	if _, err := os.Stat("cert.pem"); os.IsNotExist(err) {
 		log.Fatalf("cert.pem not found. run gen_cert.sh first")
 	}
+	// 初始化配置管理器（从命令行参数获取配置文件路径，默认 "config.yaml"）
+	configPath := flag.String("config", "config/config.yaml", "配置文件路径")
+	flag.Parse()
 
-	addr := ":4242"
-	log.Printf("listening QUIC on %s", addr)
-	listener, err := quic.ListenAddr(addr, tlsConfig(), nil)
+	mgr, err := config.NewManager(*configPath)
+	if err != nil {
+		log.Fatalf("初始化配置失败: %v", err)
+	}
+	defer mgr.Stop()
+
+	// 从管理器获取配置（后续可动态更新）
+	cfg := mgr.Get()
+	log.Printf("使用配置: %+v", cfg.Client)
+
+	log.Printf("listening QUIC on %s", cfg.Client.ServerAddr)
+	listener, err := quic.ListenAddr(cfg.Client.ServerAddr, tlsConfig(), nil)
 	if err != nil {
 		log.Fatalf("quic listen failed: %v", err)
 	}

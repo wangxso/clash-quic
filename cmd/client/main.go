@@ -1,22 +1,18 @@
 package main
 
 import (
+	"clash_quic/config"
 	"context"
 	"crypto/tls"
 	"encoding/binary"
+	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net"
-	"os"
 	"sync"
 
 	quic "github.com/quic-go/quic-go"
-)
-
-var (
-	serverAddr = "127.0.0.1:4242" // remote quic server
-	localAddr  = "127.0.0.1:1080" // local socks5 listener
 )
 
 func clientTLSConfig() *tls.Config {
@@ -143,10 +139,21 @@ func handleConn(localConn net.Conn, sess quic.Connection) {
 }
 
 func main() {
-	if len(os.Args) > 1 {
-		serverAddr = os.Args[1]
+	// 初始化配置管理器
+	configPath := flag.String("config", "config/config.yaml", "配置文件路径")
+	flag.Parse()
+
+	mgr, err := config.NewManager(*configPath)
+	if err != nil {
+		log.Fatalf("load config failed: %v", err)
 	}
+	defer mgr.Stop()
+	// 从管理器获取配置
+	cfg := mgr.Get()
+	log.Printf("使用配置: %+v", cfg.Client)
 	// establish a QUIC session and reuse it
+	serverAddr := cfg.Client.ServerAddr
+	localAddr := cfg.Client.LocalAddr
 	tlsConf := clientTLSConfig()
 	sess, err := quic.DialAddr(serverAddr, tlsConf, nil)
 	if err != nil {

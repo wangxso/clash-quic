@@ -1,0 +1,29 @@
+# 运行模式（client 或 server）
+mode: client
+
+# 日志配置
+log-level: debug
+log-file: "clash-quic.log"
+reload-interval: 30s
+
+# 客户端配置（仅 mode=client 时生效）
+client:
+  server-addr: "proxy.example.com:443"
+  local-addr: "127.0.0.1:1080"
+  tls-enable: true
+  ca-cert-path: "ca.pem"
+  auth-token: "your-secret-token"
+  dial-timeout: 10s
+  reconnect-times: 5
+
+# 服务器配置（仅 mode=server 时生效）
+server:
+  listen-addr: ":443"
+  cert-path: "server-cert.pem"
+  key-path: "server-key.pem"
+  max-streams: 200
+  allowed-ips:
+    - "192.168.1.0/24"
+  auth-tokens:
+    - "your-secret-token"
+  read-timeout: 60s
