@@ -19,12 +19,18 @@ type Config struct {
 type ClientConfig struct {
 	ServerAddr         string        `yaml:"server-addr"`     // 服务器地址（如 "example.com:443"）
 	LocalAddr          string        `yaml:"local-addr"`      // 本地监听地址（如 "127.0.0.1:1080"）
+	Protocol           string        `yaml:"protocol"`        // 代理协议类型: shadowsocks, vmess, trojan
 	TLSEnable          bool          `yaml:"tls-enable"`      // 是否启用 TLS 验证
 	CACertPath         string        `yaml:"ca-cert-path"`    // CA 证书路径
 	AuthToken          string        `yaml:"auth-token"`      // 认证令牌
 	DialTimeout        time.Duration `yaml:"dial-timeout"`    // 连接超时（如 5s）
 	ReconnectTimes     int           `yaml:"reconnect-times"` // 重连次数
 	InsecureSkipVerify bool          `yaml:"insecure"`        // 是否跳过TLS验证（调试用）
+	// 协议特定配置
+	Shadowsocks struct {
+		Method   string `yaml:"method"` // 加密方法: aes-256-gcm, chacha20-poly1305
+		Password string `yaml:"password"`
+	} `yaml:"shadowsocks"`
 }
 
 // 服务器配置
@@ -47,9 +53,14 @@ func Default() *Config {
 		Client: ClientConfig{
 			ServerAddr:     "127.0.0.1:443",
 			LocalAddr:      "127.0.0.1:1080",
+			Protocol:       "shadowsocks",
 			TLSEnable:      true,
 			DialTimeout:    5 * time.Second,
 			ReconnectTimes: 3,
+			Shadowsocks: struct {
+				Method   string `yaml:"method"`
+				Password string `yaml:"password"`
+			}{Method: "aes-256-gcm", Password: "default-password"},
 		},
 		Server: ServerConfig{
 			ListenAddr:  ":443",
